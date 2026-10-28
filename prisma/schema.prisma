@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ADMIN_SEKOLAH
+  GURU
+  SISWA
+  KEPALA_SEKOLAH
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher  Teacher?
+  student  Student?
+  branchId Int?
+  branch   Branch?  @relation(fields: [branchId], references: [id])
+
+  @@map("users")
+}
+
+model Teacher {
+  id     Int     @id @default(autoincrement())
+  userId String  @unique
+  nip    String? @unique
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeroomOf    Class[]
+  verifications Verification[]
+
+  @@map("teachers")
+}
+
+model Class {
+  id                Int    @id @default(autoincrement())
+  name              String
+  gradeLevel        Int?
+  homeroomTeacherId Int?
+
+  homeroomTeacher Teacher?  @relation(fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
+  students        Student[]
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  @@map("classes")
+}
+
+model Student {
+  id      Int    @id @default(autoincrement())
+  userId  String @unique
+  nis     String @unique
+  classId Int?
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class   Class?       @relation(fields: [classId], references: [id], onDelete: SetNull)
+  entries DailyEntry[]
+
+  @@map("students")
+}
+
+enum Term {
+  GANJIL
+  GENAP
+}
+
+enum InputType {
+  CHECKLIST
+  NUMBER
+  TEXT
+}
+
+model Semester {
+  id           Int      @id @default(autoincrement())
+  academicYear String
+  term         Term
+  startDate    DateTime @db.Date
+  endDate      DateTime @db.Date
+  isActive     Boolean  @default(false)
+
+  entries DailyEntry[]
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, academicYear, term])
+  @@map("semesters")
+}
+
+model RamadhanPeriod {
+  id        Int      @id @default(autoincrement())
+  hijriYear Int      @unique
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  @@map("ramadhan_periods")
+}
+
+model AmaliahItem {
+  id         Int       @id @default(autoincrement())
+  name       String
+  category   String?
+  inputType  InputType @default(CHECKLIST)
+  unit       String?
+  isRamadhan Boolean   @default(false)
+  isActive   Boolean   @default(true)
+  sortOrder  Int       @default(0)
+
+  details  EntryDetail[]
+  branchId Int?
+  branch   Branch?       @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, name])
+  @@map("amaliah_items")
+}
+
+enum VerificationStatus {
+  VERIFIED
+  REJECTED
+}
+
+model DailyEntry {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  semesterId Int
+  date       DateTime @db.Date
+  notes      String?
+  score Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester     Semester      @relation(fields: [semesterId], references: [id])
+  details      EntryDetail[]
+  verification Verification?
+
+  @@unique([studentId, date])
+  @@index([semesterId, studentId])
+  @@map("daily_entries")
+}
+
+model EntryDetail {
+  id          Int      @id @default(autoincrement())
+  entryId     Int
+  itemId      Int
+  boolValue   Boolean?
+  numberValue Float?
+  textValue   String?
+
+  entry DailyEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  item  AmaliahItem @relation(fields: [itemId], references: [id])
+
+  @@unique([entryId, itemId])
+  @@map("entry_details")
+}
+
+model Verification {
+  id         Int                @id @default(autoincrement())
+  entryId    Int                @unique
+  teacherId  Int
+  status     VerificationStatus
+  note       String?
+  verifiedAt DateTime           @default(now())
+
+  entry   DailyEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  teacher Teacher    @relation(fields: [teacherId], references: [id])
+
+  @@map("verifications")
+}
+
+model Branch {
+  id        Int           @id @default(autoincrement())
+  name      String
+  address   String?
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  users     User[]
+  classes   Class[]
+  semesters Semester[]
+  items     AmaliahItem[]
+}
