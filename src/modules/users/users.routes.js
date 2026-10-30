@@ -7,12 +7,20 @@ const controller = require('./users.controller');
 const router = express.Router();
 
 const ROLES = ['ADMIN', 'ADMIN_SEKOLAH', 'GURU', 'SISWA', 'KEPALA_SEKOLAH'];
+const optionalCredential = (message) => z.preprocess(
+  (value) => value === '' ? undefined : value,
+  z.string().min(8, message).optional()
+);
+const optionalUsername = z.preprocess(
+  (value) => value === '' ? undefined : value,
+  z.string().min(3, 'Username minimal 3 karakter').optional()
+);
 
 const createUserSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi'),
-    username: z.string().min(3, 'Username minimal 3 karakter'),
-    password: z.string().min(8, 'Password minimal 8 karakter'),
+    username: optionalUsername,
+    password: optionalCredential('Password minimal 8 karakter'),
     role: z.enum(ROLES),
     branchId: z.number().int().positive('branchId tidak valid').optional(),
     nis: z.string().optional(),
@@ -22,6 +30,14 @@ const createUserSchema = z
   .refine((d) => d.role !== 'SISWA' || d.nis, {
     message: 'NIS wajib diisi untuk siswa',
     path: ['nis'],
+  })
+  .refine((d) => d.role === 'SISWA' || d.username, {
+    message: 'Username wajib diisi',
+    path: ['username'],
+  })
+  .refine((d) => d.role === 'SISWA' || d.password, {
+    message: 'Password wajib diisi',
+    path: ['password'],
   });
 
 const updateUserSchema = z.object({
