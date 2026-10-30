@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = require('../../config/db'); // Gunakan satu tempat impor saja
 const ApiError = require('../../utils/ApiError');
 const { getBranchFilter, assertBranchAccess } = require('../../utils/branchScope');
@@ -23,7 +24,7 @@ const fullSelect = {
   teacher: true,
 };
 
-async function createUser(actor, { name, username, password, role, nip, branchId, classId }) {
+async function createUser(actor, { name, username, password, role, nis, nip, branchId, classId }) {
   // Validasi panjang username & password sesuai dokumentasi
   if (!username || username.length < 3) {
     throw ApiError.badRequest('Username minimal 3 karakter');
