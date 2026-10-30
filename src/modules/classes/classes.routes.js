@@ -10,6 +10,7 @@ const createSchema = z.object({
   name: z.string().min(1, 'Nama kelas wajib diisi'),
   gradeLevel: z.number().int().min(1).max(12).optional(),
   homeroomTeacherId: z.number().int().nullable().optional(),
+  branchId: z.number().int().positive('branchId tidak valid'),
 });
 const updateSchema = createSchema.partial();
 const assignSchema = z.object({

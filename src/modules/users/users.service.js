@@ -17,9 +17,13 @@ const safeSelect = {
   branchId: true,
 };
 
-const fullSelect = { ...safeSelect, student: true, teacher: true };
+const fullSelect = {
+  ...safeSelect,
+  student: { include: { class: true } },
+  teacher: true,
+};
 
-async function createUser(actor, { name, username, password, role, nis, nip, branchId }) {
+async function createUser(actor, { name, username, password, role, nis, nip, branchId, classId }) {
   // Validasi panjang username & password sesuai dokumentasi
   if (!username || username.length < 3) {
     throw ApiError.badRequest('Username minimal 3 karakter');
@@ -47,6 +51,10 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
   if (role === 'SISWA' && !nis) {
     throw ApiError.badRequest('nis wajib diisi untuk peran SISWA');
   }
+  if (role === 'SISWA' && classId !== undefined) {
+    const kelas = await prisma.class.findUnique({ where: { id: classId }, select: { branchId: true } });
+    if (!kelas || kelas.branchId !== branchId) throw ApiError.badRequest('Kelas tidak sesuai dengan cabang siswa');
+  }
 
   // Cek apakah username sudah digunakan (Harus 409 sesuai spesifikasi)
   const existingUser = await prisma.user.findUnique({ where: { username } });
@@ -65,7 +73,7 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
   };
 
   if (role === 'SISWA') {
-    userData.student = { create: { nis } };
+    userData.student = { create: { nis, classId: classId ?? null } };
   } else if (role === 'GURU' && nip) {
     userData.teacher = { create: { nip } };
   }
@@ -137,8 +145,13 @@ async function getUser(actor, id) {
 async function updateUser(actor, id, data) {
   const user = await getUser(actor, id);
 
-  const { password, nis, nip, role, branchId, username, ...rest } = data;
+  const { password, nis, nip, role, branchId, username, classId, ...rest } = data;
   const updateData = { ...rest };
+  if (user.role === 'SISWA' && classId !== undefined && classId !== null) {
+    const kelas = await prisma.class.findUnique({ where: { id: classId }, select: { branchId: true } });
+    const targetBranchId = branchId !== undefined ? branchId : user.branchId;
+    if (!kelas || kelas.branchId !== targetBranchId) throw ApiError.badRequest('Kelas tidak sesuai dengan cabang siswa');
+  }
 
   // Validasi username unik jika diubah
   if (username && username !== user.username) {
@@ -160,7 +173,9 @@ async function updateUser(actor, id, data) {
 
   // Update relasi NIS / NIP
   if (nis !== undefined && user.role === 'SISWA') {
-    updateData.student = { upsert: { create: { nis }, update: { nis } } };
+    updateData.student = { upsert: { create: { nis, classId: classId ?? null }, update: { nis, ...(classId !== undefined ? { classId } : {}) } } };
+  } else if (classId !== undefined && user.role === 'SISWA') {
+    updateData.student = { update: { classId: classId ?? null } };
   }
   if (nip !== undefined && user.role === 'GURU') {
     updateData.teacher = { upsert: { create: { nip }, update: { nip } } };

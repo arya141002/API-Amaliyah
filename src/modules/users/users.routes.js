@@ -17,6 +17,7 @@ const createUserSchema = z
     branchId: z.number().int().positive('branchId tidak valid').optional(),
     nis: z.string().optional(),
     nip: z.string().optional(),
+    classId: z.number().int().positive('classId tidak valid').optional(),
   })
   .refine((d) => d.role !== 'SISWA' || d.nis, {
     message: 'NIS wajib diisi untuk siswa',
@@ -32,6 +33,7 @@ const updateUserSchema = z.object({
   isActive: z.boolean('Status aktif harus berupa boolean').optional(),
   nis: z.string().optional(),
   nip: z.string().optional(),
+  classId: z.number().int().positive('classId tidak valid').nullable().optional(),
 });
 
 router.use(authenticate, authorize('ADMIN', 'ADMIN_SEKOLAH'));
