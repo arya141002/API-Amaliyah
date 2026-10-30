@@ -2,6 +2,7 @@ const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
 
 const include = {
+  branch: { select: { id: true, name: true } },
   homeroomTeacher: { select: { id: true, user: { select: { name: true } } } },
   _count: { select: { students: true } },
 };
