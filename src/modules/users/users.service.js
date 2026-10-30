@@ -65,8 +65,8 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
     branchId: branchId ?? null,
   };
 
-  if (role === 'GURU' && nip) {
-    userData.teacher = { create: { nip } };
+  if (role === 'GURU') {
+    userData.teacher = { create: { nip: nip || null } };
   }
 
   return prisma.user.create({
