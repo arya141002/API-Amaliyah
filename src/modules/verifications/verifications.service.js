@@ -20,10 +20,11 @@ async function scopeFor(actor) {
   throw ApiError.forbidden('Tidak punya akses ke verifikasi');
 }
 
-async function listEntries(actor, { classId, date, from, to }) {
+async function listEntries(actor, { classId, branchId, date, from, to }) {
   const where = { AND: [await scopeFor(actor)] };
 
   if (classId) where.AND.push({ student: { classId: Number(classId) } });
+  if (branchId) where.AND.push({ student: { class: { branchId: Number(branchId) } } });
 
   if (date) {
     where.AND.push({ date: parseDateOnly(date) });

@@ -8,8 +8,11 @@ const semester = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('semesterId wajib diisi');
   }
   const classId = req.query.classId ? Number(req.query.classId) : undefined;
+  const branchId = req.query.branchId ? Number(req.query.branchId) : undefined;
+  const from = req.query.from || undefined;
+  const to = req.query.to || undefined;
 
-  const data = await service.semesterRecap(req.user, { semesterId, classId });
+  const data = await service.semesterRecap(req.user, { semesterId, classId, branchId, from, to });
   res.json({ success: true, data });
 });
 

@@ -2,8 +2,8 @@ const asyncHandler = require('../../utils/asyncHandler');
 const service = require('./verifications.service');
 
 const list = asyncHandler(async (req, res) => {
-  const { classId, date, from, to } = req.query;
-  const data = await service.listEntries(req.user, { classId, date, from, to });
+  const { classId, branchId, date, from, to } = req.query;
+  const data = await service.listEntries(req.user, { classId, branchId, date, from, to });
   res.json({ success: true, data });
 });
 

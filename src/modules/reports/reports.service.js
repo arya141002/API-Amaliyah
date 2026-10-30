@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
 const { getHomeroomClassIds } = require('../../utils/teacherScope');
+const { parseDateOnly } = require('../../utils/date');
 
 // Batas siswa yang boleh direkap oleh peran ini
 async function studentScope(actor) {
@@ -19,7 +20,7 @@ async function studentScope(actor) {
   throw ApiError.forbidden('Tidak punya akses ke rekap');
 }
 
-async function semesterRecap(actor, { semesterId, classId }) {
+async function semesterRecap(actor, { semesterId, classId, branchId, from, to }) {
   const semester = await prisma.semester.findUnique({ where: { id: semesterId } });
   if (!semester || (actor.role !== 'ADMIN' && semester.branchId !== actor.branchId)) {
     throw ApiError.notFound('Semester tidak ditemukan');
@@ -27,6 +28,7 @@ async function semesterRecap(actor, { semesterId, classId }) {
 
   const where = { AND: [await studentScope(actor)] };
   if (classId) where.AND.push({ classId });
+  if (branchId) where.AND.push({ class: { branchId } });
 
   const students = await prisma.student.findMany({
     where,
@@ -41,8 +43,14 @@ async function semesterRecap(actor, { semesterId, classId }) {
 
   const ids = students.map((s) => s.id);
 
+  const entryWhere = { semesterId, studentId: { in: ids } };
+  if (from || to) {
+    entryWhere.date = {};
+    if (from) entryWhere.date.gte = parseDateOnly(from);
+    if (to) entryWhere.date.lte = parseDateOnly(to);
+  }
   const entries = await prisma.dailyEntry.findMany({
-    where: { semesterId, studentId: { in: ids } },
+    where: entryWhere,
     include: {
       details: { include: { item: { select: { inputType: true } } } },
       verification: { select: { status: true } },
