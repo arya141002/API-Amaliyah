@@ -137,7 +137,7 @@ Item dengan `branchId` kosong adalah template pusat. Item cabang dibuat dengan m
 | DELETE | `/amaliah-items/destroy/:id` | ADMIN, ADMIN\_SEKOLAH | Menghapus item permanen jika tidak dipakai pada riwayat isian. |
 | POST | `/amaliah-items/import-template` | ADMIN, ADMIN\_SEKOLAH | Menyalin template ke cabang. ADMIN mengirim `{ "branchId" }`. Respons: `copied` dan `skipped`. |
 
-Field item: `name`, `category`, `inputType` (CHECKLIST, NUMBER, atau TEXT), `unit`, `isRamadhan`, `isActive`, `sortOrder`.
+Field item: `name`, `category`, `inputType` (CHECKLIST, NUMBER, TEXT, atau RADIO), `unit`, `options` (array pilihan untuk RADIO), `isRamadhan`, `isActive`, `sortOrder`.
 
 ## Form harian siswa
 
@@ -166,7 +166,7 @@ Body `PUT /entries/:date`:
 }
 ```
 
-Aturan nilai per `inputType`: CHECKLIST memakai `boolValue` (true atau false), NUMBER memakai `numberValue` (angka, tidak negatif), TEXT memakai `textValue`. Satu item tidak boleh dikirim dua kali. Respons PUT berisi form terbaru, termasuk `score`.
+Aturan nilai per `inputType`: CHECKLIST memakai `boolValue` (true atau false), NUMBER memakai `numberValue` (angka, tidak negatif), TEXT dan RADIO memakai `textValue`. Nilai RADIO harus salah satu dari `options` item. Satu item tidak boleh dikirim dua kali. Respons PUT berisi form terbaru, termasuk `score`.
 
 ## Verifikasi
 

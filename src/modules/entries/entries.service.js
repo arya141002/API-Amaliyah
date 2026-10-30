@@ -135,6 +135,17 @@ async function saveEntry(userId, dateText, { notes, details }) {
       }
       return { itemId: item.id, numberValue: d.numberValue };
     }
+    if (item.inputType === 'RADIO') {
+      if (typeof d.textValue !== 'string') {
+        throw ApiError.badRequest(`"${item.name}" harus memilih salah satu pilihan`);
+      }
+      const options = Array.isArray(item.options) ? item.options : [];
+      const value = d.textValue.trim();
+      if (!options.includes(value)) {
+        throw ApiError.badRequest(`Pilihan untuk "${item.name}" tidak valid`);
+      }
+      return { itemId: item.id, textValue: value };
+    }
     if (typeof d.textValue !== 'string') {
       throw ApiError.badRequest(`"${item.name}" harus diisi teks (textValue)`);
     }

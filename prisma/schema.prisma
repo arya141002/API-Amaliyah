@@ -90,6 +90,7 @@ enum InputType {
   CHECKLIST
   NUMBER
   TEXT
+  RADIO
 }
 
 model Semester {
@@ -124,6 +125,7 @@ model AmaliahItem {
   category   String?
   inputType  InputType @default(CHECKLIST)
   unit       String?
+  options    Json?
   isRamadhan Boolean   @default(false)
   isActive   Boolean   @default(true)
   sortOrder  Int       @default(0)

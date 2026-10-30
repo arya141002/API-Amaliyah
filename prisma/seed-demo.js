@@ -42,7 +42,7 @@ const KEPSEK = { name: 'Bapak Kepala Sekolah', username: 'kepsek', password: 'ke
 
 // Template pusat (branchId null)
 const ITEMS = [
-  { name: 'Sholat Subuh berjamaah', category: 'Sholat', inputType: 'CHECKLIST', sortOrder: 1 },
+  { name: 'Sholat Subuh berjamaah', category: 'Sholat', inputType: 'RADIO', options: ['Tidak', 'Di rumah', 'Di masjid'], sortOrder: 1 },
   { name: 'Sholat Dzuhur berjamaah', category: 'Sholat', inputType: 'CHECKLIST', sortOrder: 2 },
   { name: 'Sholat Ashar berjamaah', category: 'Sholat', inputType: 'CHECKLIST', sortOrder: 3 },
   { name: 'Sholat Maghrib berjamaah', category: 'Sholat', inputType: 'CHECKLIST', sortOrder: 4 },
@@ -235,6 +235,10 @@ async function main() {
           }
           if (item.inputType === 'NUMBER') {
             return { entryId: entry.id, itemId: item.id, numberValue: 2 + back };
+          }
+          if (item.inputType === 'RADIO') {
+            const options = Array.isArray(item.options) ? item.options : ['Tidak'];
+            return { entryId: entry.id, itemId: item.id, textValue: options[(n + back) % options.length] };
           }
           return { entryId: entry.id, itemId: item.id, textValue: 'Alhamdulillah' };
         }),

@@ -9,12 +9,16 @@ const router = express.Router();
 const createSchema = z.object({
   name: z.string().min(1, 'Nama item wajib diisi'),
   category: z.string().optional(),
-  inputType: z.enum(['CHECKLIST', 'NUMBER', 'TEXT']).default('CHECKLIST'),
+  inputType: z.enum(['CHECKLIST', 'NUMBER', 'TEXT', 'RADIO']).default('CHECKLIST'),
   unit: z.string().optional(),
+  options: z.array(z.string().min(1)).max(20).optional(),
   isRamadhan: z.boolean().default(false),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().default(0),
   branchId: z.number().int().positive('branchId tidak valid').optional(),
+}).refine((data) => data.inputType !== 'RADIO' || (data.options && data.options.length >= 2), {
+  message: 'Item RADIO harus memiliki minimal dua pilihan',
+  path: ['options'],
 });
 const updateSchema = createSchema.partial();
 
