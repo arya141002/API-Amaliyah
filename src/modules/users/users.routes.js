@@ -40,6 +40,7 @@ router.post('/', validate(createUserSchema), controller.create);
 router.get('/', controller.list);
 router.get('/:id', controller.detail);
 router.patch('/:id', validate(updateUserSchema), controller.update);
+router.delete('/destroy/:id', controller.destroy);
 router.delete('/:id', controller.deactivate);
 
 module.exports = router;

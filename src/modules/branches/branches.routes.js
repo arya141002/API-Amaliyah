@@ -13,6 +13,7 @@ router.get('/', ctrl.list);
 router.post('/', validate(createBranchSchema), ctrl.create);
 router.get('/:id', ctrl.get);
 router.patch('/:id', validate(updateBranchSchema), ctrl.update);
+router.delete('/destroy/:id', ctrl.destroy);
 router.delete('/:id', ctrl.deactivate);
 
 module.exports = router;

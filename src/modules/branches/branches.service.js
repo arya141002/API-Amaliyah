@@ -27,10 +27,23 @@ async function deactivateBranch(id) {
   return prisma.branch.update({ where: { id }, data: { isActive: false } });
 }
 
+async function destroyBranch(id) {
+  await getBranch(id);
+  try {
+    return await prisma.branch.delete({ where: { id } });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      throw ApiError.conflict('Cabang masih memiliki data terkait dan tidak dapat dihapus permanen');
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   listBranches,
   getBranch,
   createBranch,
   updateBranch,
   deactivateBranch,
+  destroyBranch,
 };

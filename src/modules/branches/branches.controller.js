@@ -35,4 +35,9 @@ const deactivate = asyncHandler(async (req, res) => {
   res.json(branch);
 });
 
-module.exports = { list, get, create, update, deactivate };
+const destroy = asyncHandler(async (req, res) => {
+  await service.destroyBranch(parseId(req.params.id));
+  res.json({ success: true, message: 'Cabang dihapus permanen' });
+});
+
+module.exports = { list, get, create, update, deactivate, destroy };

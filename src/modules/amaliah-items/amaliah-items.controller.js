@@ -26,9 +26,14 @@ const deactivate = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Item amaliah dinonaktifkan' });
 });
 
+const destroy = asyncHandler(async (req, res) => {
+  await service.destroyItem(req.user, Number(req.params.id));
+  res.json({ success: true, message: 'Item amaliah dihapus permanen' });
+});
+
 const importTemplate = asyncHandler(async (req, res) => {
   const data = await service.importTemplate(req.user, req.body.branchId);
   res.json({ success: true, message: 'Template berhasil disalin', data });
 });
 
-module.exports = { list, detail, create, update, deactivate, importTemplate };
+module.exports = { list, detail, create, update, deactivate, destroy, importTemplate };

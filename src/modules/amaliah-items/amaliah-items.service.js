@@ -68,6 +68,18 @@ async function deactivateItem(actor, id) {
   return prisma.amaliahItem.update({ where: { id }, data: { isActive: false } });
 }
 
+async function destroyItem(actor, id) {
+  await getItem(actor, id);
+  try {
+    return await prisma.amaliahItem.delete({ where: { id } });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      throw ApiError.conflict('Item masih dipakai pada riwayat isian dan tidak dapat dihapus permanen');
+    }
+    throw error;
+  }
+}
+
 async function importTemplate(actor, requestedBranchId) {
   const branchId = actor.role === 'ADMIN' ? requestedBranchId : actor.branchId;
   if (!branchId) {
@@ -112,5 +124,6 @@ module.exports = {
   createItem,
   updateItem,
   deactivateItem,
+  destroyItem,
   importTemplate,
 };

@@ -187,4 +187,20 @@ async function deactivateUser(actor, id) {
   });
 }
 
-module.exports = { createUser, listUsers, getUser, updateUser, deactivateUser };
+async function destroyUser(actor, id) {
+  if (id === actor.id) {
+    throw ApiError.badRequest('Tidak dapat menghapus akun sendiri');
+  }
+
+  await getUser(actor, id);
+  try {
+    return await prisma.user.delete({ where: { id } });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      throw ApiError.conflict('User masih memiliki data terkait dan tidak dapat dihapus permanen');
+    }
+    throw error;
+  }
+}
+
+module.exports = { createUser, listUsers, getUser, updateUser, deactivateUser, destroyUser };

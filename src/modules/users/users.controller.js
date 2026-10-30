@@ -30,4 +30,9 @@ const deactivate = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'User dinonaktifkan' });
 });
 
-module.exports = { create, list, detail, update, deactivate };
+const destroy = asyncHandler(async (req, res) => {
+  await usersService.destroyUser(req.user, req.params.id);
+  res.json({ success: true, message: 'User dihapus permanen' });
+});
+
+module.exports = { create, list, detail, update, deactivate, destroy };

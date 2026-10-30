@@ -35,6 +35,7 @@ router.get('/:id', controller.detail);
 router.post('/import-template', authorize(...ADMINS), validate(importSchema), controller.importTemplate);
 router.post('/', authorize(...ADMINS), validate(createSchema), controller.create);
 router.patch('/:id', authorize(...ADMINS), validate(updateSchema), controller.update);
+router.delete('/destroy/:id', authorize(...ADMINS), controller.destroy);
 router.delete('/:id', authorize(...ADMINS), controller.deactivate);
 
 module.exports = router;

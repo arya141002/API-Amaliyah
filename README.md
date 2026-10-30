@@ -64,6 +64,7 @@ Hanya ADMIN.
 | GET | `/branches/:id` | Detail cabang. |
 | PATCH | `/branches/:id` | Ubah `name`, `address`, atau `isActive`. |
 | DELETE | `/branches/:id` | Menonaktifkan cabang, tidak menghapus. |
+| DELETE | `/branches/destroy/:id` | Menghapus cabang permanen jika tidak memiliki data terkait. |
 
 ## Pengguna
 
@@ -76,6 +77,7 @@ Akses: ADMIN dan ADMIN\_SEKOLAH. Admin sekolah hanya melihat dan mengubah user d
 | GET | `/users/:id` | Detail user. |
 | PATCH | `/users/:id` | Ubah user. |
 | DELETE | `/users/:id` | Menonaktifkan user. Tidak bisa menonaktifkan akun sendiri. |
+| DELETE | `/users/destroy/:id` | Menghapus user permanen jika tidak memiliki data terkait. Tidak bisa menghapus akun sendiri. |
 
 Body `POST /users`:
 
@@ -132,6 +134,7 @@ Item dengan `branchId` kosong adalah template pusat. Item cabang dibuat dengan m
 | POST | `/amaliah-items` | ADMIN, ADMIN\_SEKOLAH | Admin sekolah selalu membuat di cabangnya. ADMIN tanpa `branchId` membuat template. |
 | PATCH | `/amaliah-items/:id` | ADMIN, ADMIN\_SEKOLAH | Item tidak bisa dipindah cabang. |
 | DELETE | `/amaliah-items/:id` | ADMIN, ADMIN\_SEKOLAH | Menonaktifkan item agar riwayat isian tetap utuh. |
+| DELETE | `/amaliah-items/destroy/:id` | ADMIN, ADMIN\_SEKOLAH | Menghapus item permanen jika tidak dipakai pada riwayat isian. |
 | POST | `/amaliah-items/import-template` | ADMIN, ADMIN\_SEKOLAH | Menyalin template ke cabang. ADMIN mengirim `{ "branchId" }`. Respons: `copied` dan `skipped`. |
 
 Field item: `name`, `category`, `inputType` (CHECKLIST, NUMBER, atau TEXT), `unit`, `isRamadhan`, `isActive`, `sortOrder`.
