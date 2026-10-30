@@ -55,7 +55,9 @@ async function searchStudents({ classId, q }) {
   const students = await prisma.student.findMany({
     where: {
       classId,
-      user: { isActive: true, name: { contains: term, mode: 'insensitive' } },
+      isActive: true,
+      name: { contains: term, mode: 'insensitive' },
+      class: { branch: { isActive: true } },
     },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
