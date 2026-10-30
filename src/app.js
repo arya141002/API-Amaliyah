@@ -32,7 +32,6 @@ const corsOptions = {
 
 // 2. Pasang CORS SEBELUM Helmet & Middleware Lainnya
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight OPTIONS request untuk semua rute
 
 // 3. Konfigurasi Helmet agar tidak memblokir Cross-Origin Resource
 app.use(

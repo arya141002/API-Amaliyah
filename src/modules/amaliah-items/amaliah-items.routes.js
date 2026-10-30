@@ -6,7 +6,7 @@ const controller = require('./amaliah-items.controller');
 
 const router = express.Router();
 
-const createSchema = z.object({
+const itemFields = {
   name: z.string().min(1, 'Nama item wajib diisi'),
   category: z.string().optional(),
   inputType: z.enum(['CHECKLIST', 'NUMBER', 'TEXT', 'RADIO']).default('CHECKLIST'),
@@ -16,11 +16,19 @@ const createSchema = z.object({
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().default(0),
   branchId: z.number().int().positive('branchId tidak valid').optional(),
-}).refine((data) => data.inputType !== 'RADIO' || (data.options && data.options.length >= 2), {
+};
+
+function radioOptionsRefinement(data) {
+  return data.inputType !== 'RADIO' || (data.options && data.options.length >= 2);
+}
+
+const radioOptionsMessage = {
   message: 'Item RADIO harus memiliki minimal dua pilihan',
   path: ['options'],
-});
-const updateSchema = createSchema.partial();
+};
+
+const createSchema = z.object(itemFields).refine(radioOptionsRefinement, radioOptionsMessage);
+const updateSchema = z.object(itemFields).partial().refine(radioOptionsRefinement, radioOptionsMessage);
 
 const importSchema = z.object({
   branchId: z.number().int().positive('branchId tidak valid').optional(),
