@@ -174,7 +174,7 @@ async function listEntries(userId, { semesterId, from, to }) {
     where,
     orderBy: { date: 'desc' },
     include: {
-      verification: { select: { status: true, score: true, note: true, verifiedAt: true } },
+      verification: { select: { status: true, note: true, verifiedAt: true } },
       _count: { select: { details: true } },
     },
   });

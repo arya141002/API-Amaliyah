@@ -16,6 +16,9 @@ const verificationsRoutes = require('./modules/verifications/verifications.route
 const reportsRoutes = require('./modules/reports/reports.routes');
 
 const app = express();
+const rateLimit = require('express-rate-limit');
+
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors());
@@ -26,6 +29,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use(
+  '/api/public',
+  rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false }),
+  require('./modules/public/public.routes')
+);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/classes', classesRoutes);
