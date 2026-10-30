@@ -14,14 +14,15 @@ async function validateHomeroomTeacher(branchId, homeroomTeacherId) {
   if (!teacher) throw ApiError.badRequest('Guru wali kelas harus berasal dari cabang yang sama dan aktif');
 }
 
-async function list() {
+async function list(actor) {
   return prisma.class.findMany({
+    where: actor.role === 'ADMIN_SEKOLAH' ? { branchId: actor.branchId } : undefined,
     include,
     orderBy: [{ gradeLevel: 'asc' }, { name: 'asc' }],
   });
 }
 
-async function getById(id) {
+async function getById(id, actor) {
   const kelas = await prisma.class.findUnique({
     where: { id },
     include: {
@@ -30,16 +31,19 @@ async function getById(id) {
     },
   });
   if (!kelas) throw ApiError.notFound('Kelas tidak ditemukan');
+  if (actor?.role === 'ADMIN_SEKOLAH' && kelas.branchId !== actor.branchId) throw ApiError.notFound('Kelas tidak ditemukan');
   return kelas;
 }
 
-async function create(data) {
+async function create(actor, data) {
+  if (actor.role === 'ADMIN_SEKOLAH') data = { ...data, branchId: actor.branchId };
   await validateHomeroomTeacher(data.branchId, data.homeroomTeacherId);
   return prisma.class.create({ data, include });
 }
 
-async function update(id, data) {
-  const current = await getById(id);
+async function update(actor, id, data) {
+  const current = await getById(id, actor);
+  if (actor.role === 'ADMIN_SEKOLAH') data = { ...data, branchId: actor.branchId };
   await validateHomeroomTeacher(data.branchId ?? current.branchId, data.homeroomTeacherId);
   return prisma.class.update({ where: { id }, data, include });
 }
