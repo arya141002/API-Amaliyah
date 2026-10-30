@@ -8,14 +8,15 @@ const errorHandler = (err, req, res, next) => {
   if (err.code === 'P2003') {
     err = ApiError.conflict('Data terhubung dengan data lain (rujukan tidak ada atau masih dipakai)');
   }
+
   const statusCode = err.statusCode || 500;
   if (statusCode >= 500) console.error(err);
+
   res.status(statusCode).json({
     success: false,
     message: err.message,
     errors: err.details || undefined,
   });
 };
-
 
 module.exports = { notFoundHandler, errorHandler };

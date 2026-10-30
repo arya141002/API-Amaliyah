@@ -1,6 +1,7 @@
 const asyncHandler = require('../../utils/asyncHandler');
 const usersService = require('./users.service');
 
+
 const create = asyncHandler(async (req, res) => {
   const data = await usersService.createUser(req.user, req.body);
   res.status(201).json({ success: true, message: 'User berhasil dibuat', data });

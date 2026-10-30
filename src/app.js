@@ -2,9 +2,18 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
+
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
-const { authenticate, authorize } = require('./middleware/auth');
+const authRoutes = require('./modules/auth/auth.routes');
+const usersRoutes = require('./modules/users/users.routes');
+const classesRoutes = require('./modules/classes/classes.routes');
+const semestersRoutes = require('./modules/semesters/semesters.routes');
+const amaliahItemsRoutes = require('./modules/amaliah-items/amaliah-items.routes');
+const ramadhanPeriodsRoutes = require('./modules/ramadhan-periods/ramadhan-periods.routes');
+const entriesRoutes = require('./modules/entries/entries.routes');
 const branchesRoutes = require('./modules/branches/branches.routes');
+const verificationsRoutes = require('./modules/verifications/verifications.routes');
+const reportsRoutes = require('./modules/reports/reports.routes');
 
 const app = express();
 
@@ -17,16 +26,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api/auth', require('./modules/auth/auth.routes'));
-app.use('/api/users', require('./modules/users/users.routes'));
-app.use('/api/classes', require('./modules/classes/classes.routes'));
-app.use('/api/semesters', require('./modules/semesters/semesters.routes'));
-app.use('/api/amaliah-items', require('./modules/amaliah-items/amaliah-items.routes'));
-app.use('/api/ramadhan-periods', require('./modules/ramadhan-periods/ramadhan-periods.routes'));
-app.use('/api/entries', require('./modules/entries/entries.routes'));
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/classes', classesRoutes);
+app.use('/api/semesters', semestersRoutes);
+app.use('/api/amaliah-items', amaliahItemsRoutes);
+app.use('/api/ramadhan-periods', ramadhanPeriodsRoutes);
+app.use('/api/entries', entriesRoutes);
 app.use('/api/branches', branchesRoutes);
-app.use('/api/verifications', require('./modules/verifications/verifications.routes'));
-app.use('/api/reports', require('./modules/reports/reports.routes'));
+app.use('/api/verifications', verificationsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

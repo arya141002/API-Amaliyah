@@ -1,6 +1,5 @@
-const asyncHandler = require('../../utils/asyncHandler'); // Sesuaikan path utils asyncHandler Anda
+const asyncHandler = require('../../utils/asyncHandler');
 const authService = require('./auth.service');
-
 /**
  * Controller untuk menangani proses login user
  */
