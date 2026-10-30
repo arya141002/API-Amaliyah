@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
@@ -16,12 +17,30 @@ const verificationsRoutes = require('./modules/verifications/verifications.route
 const reportsRoutes = require('./modules/reports/reports.routes');
 
 const app = express();
-const rateLimit = require('express-rate-limit');
 
+// Diperlukan agar Express membaca IP / Header dari Vercel Reverse Proxy
 app.set('trust proxy', 1);
 
-app.use(helmet());
-app.use(cors());
+// 1. Opsi CORS Eksplisit
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Tambahkan domain frontend jika sudah di-deploy
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// 2. Pasang CORS SEBELUM Helmet & Middleware Lainnya
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight OPTIONS request untuk semua rute
+
+// 3. Konfigurasi Helmet agar tidak memblokir Cross-Origin Resource
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+);
+
 app.use(express.json());
 app.use(morgan('dev'));
 
