@@ -29,14 +29,27 @@ async function deactivateBranch(id) {
 
 async function destroyBranch(id) {
   await getBranch(id);
-  try {
-    return await prisma.branch.delete({ where: { id } });
-  } catch (error) {
-    if (error.code === 'P2003') {
-      throw ApiError.conflict('Cabang masih memiliki data terkait dan tidak dapat dihapus permanen');
-    }
-    throw error;
+
+  const [userCount, classCount, semesterCount, itemCount] = await Promise.all([
+    prisma.user.count({ where: { branchId: id } }),
+    prisma.class.count({ where: { branchId: id } }),
+    prisma.semester.count({ where: { branchId: id } }),
+    prisma.amaliahItem.count({ where: { branchId: id } }),
+  ]);
+
+  const related = [];
+  if (userCount) related.push(`${userCount} pengguna`);
+  if (classCount) related.push(`${classCount} kelas`);
+  if (semesterCount) related.push(`${semesterCount} semester`);
+  if (itemCount) related.push(`${itemCount} item amaliyah`);
+
+  if (related.length > 0) {
+    throw ApiError.conflict(
+      `Cabang masih digunakan oleh ${related.join(', ')}. Nonaktifkan saja atau hapus data terkait terlebih dahulu.`
+    );
   }
+
+  return prisma.branch.delete({ where: { id } });
 }
 
 module.exports = {
