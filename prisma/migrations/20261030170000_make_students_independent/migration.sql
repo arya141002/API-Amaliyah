@@ -20,7 +20,7 @@ ALTER TABLE "students" ALTER COLUMN "userId" DROP NOT NULL;
 
 ALTER TABLE "students"
   ADD CONSTRAINT "students_branchId_fkey"
-  FOREIGN KEY ("branchId") REFERENCES "branches"("id")
+  FOREIGN KEY ("branchId") REFERENCES "Branch"("id")
   ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "students"
