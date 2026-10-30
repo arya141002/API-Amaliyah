@@ -6,18 +6,21 @@ const controller = require('./semesters.controller');
 
 const router = express.Router();
 
-const base = z.object({
+const semesterFields = {
   academicYear: z.string().regex(/^\d{4}\/\d{4}$/, 'Format tahun ajaran: 2026/2027'),
   term: z.enum(['GANJIL', 'GENAP']),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
+  branchId: z.number().int().positive('branchId tidak valid'),
   isActive: z.boolean().optional(),
-});
-const createSchema = base.refine((d) => d.endDate > d.startDate, {
+};
+const dateRefinement = (d) => !d.startDate || !d.endDate || d.endDate > d.startDate;
+const dateMessage = {
   message: 'Tanggal selesai harus setelah tanggal mulai',
   path: ['endDate'],
-});
-const updateSchema = base.partial();
+};
+const createSchema = z.object(semesterFields).refine(dateRefinement, dateMessage);
+const updateSchema = z.object(semesterFields).partial().refine(dateRefinement, dateMessage);
 
 router.use(authenticate);
 

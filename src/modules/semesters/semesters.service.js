@@ -2,17 +2,17 @@ const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
 
 async function list() {
-  return prisma.semester.findMany({ orderBy: { startDate: 'desc' } });
+  return prisma.semester.findMany({ include: { branch: { select: { id: true, name: true } } }, orderBy: { startDate: 'desc' } });
 }
 
 async function getActive() {
-  const semester = await prisma.semester.findFirst({ where: { isActive: true } });
+  const semester = await prisma.semester.findFirst({ where: { isActive: true }, include: { branch: true } });
   if (!semester) throw ApiError.notFound('Belum ada semester aktif');
   return semester;
 }
 
 async function getById(id) {
-  const semester = await prisma.semester.findUnique({ where: { id } });
+  const semester = await prisma.semester.findUnique({ where: { id }, include: { branch: true } });
   if (!semester) throw ApiError.notFound('Semester tidak ditemukan');
   return semester;
 }
