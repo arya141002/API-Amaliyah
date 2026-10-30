@@ -11,8 +11,8 @@ const ROLES = ['ADMIN', 'ADMIN_SEKOLAH', 'GURU', 'SISWA', 'KEPALA_SEKOLAH'];
 const createUserSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi'),
-    username: z.string().min(3, 'Username minimal 3 karakter'),
-    password: z.string().min(8, 'Password minimal 8 karakter'),
+    username: z.string().min(3, 'Username minimal 3 karakter').optional(),
+    password: z.string().min(8, 'Password minimal 8 karakter').optional(),
     role: z.enum(ROLES),
     branchId: z.number().int().positive('branchId tidak valid').optional(),
     nis: z.string().optional(),
@@ -22,6 +22,14 @@ const createUserSchema = z
   .refine((d) => d.role !== 'SISWA' || d.nis, {
     message: 'NIS wajib diisi untuk siswa',
     path: ['nis'],
+  })
+  .refine((d) => d.role === 'SISWA' || d.username, {
+    message: 'Username wajib diisi',
+    path: ['username'],
+  })
+  .refine((d) => d.role === 'SISWA' || d.password, {
+    message: 'Password wajib diisi',
+    path: ['password'],
   });
 
 const updateUserSchema = z.object({
