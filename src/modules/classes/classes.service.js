@@ -6,6 +6,14 @@ const include = {
   _count: { select: { students: true } },
 };
 
+async function validateHomeroomTeacher(branchId, homeroomTeacherId) {
+  if (homeroomTeacherId === undefined || homeroomTeacherId === null) return;
+  const teacher = await prisma.teacher.findFirst({
+    where: { id: homeroomTeacherId, user: { branchId, role: 'GURU', isActive: true } },
+  });
+  if (!teacher) throw ApiError.badRequest('Guru wali kelas harus berasal dari cabang yang sama dan aktif');
+}
+
 async function list() {
   return prisma.class.findMany({
     include,
@@ -26,11 +34,13 @@ async function getById(id) {
 }
 
 async function create(data) {
+  await validateHomeroomTeacher(data.branchId, data.homeroomTeacherId);
   return prisma.class.create({ data, include });
 }
 
 async function update(id, data) {
-  await getById(id);
+  const current = await getById(id);
+  await validateHomeroomTeacher(data.branchId ?? current.branchId, data.homeroomTeacherId);
   return prisma.class.update({ where: { id }, data, include });
 }
 
