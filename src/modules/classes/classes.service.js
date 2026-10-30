@@ -18,7 +18,7 @@ async function getById(id) {
     where: { id },
     include: {
       ...include,
-      students: { select: { id: true, nis: true, user: { select: { name: true } } } },
+      students: { select: { id: true, nis: true, name: true } },
     },
   });
   if (!kelas) throw ApiError.notFound('Kelas tidak ditemukan');

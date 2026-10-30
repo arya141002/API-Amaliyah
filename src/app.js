@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
+const studentsRoutes = require('./modules/students/students.routes');
 const classesRoutes = require('./modules/classes/classes.routes');
 const semestersRoutes = require('./modules/semesters/semesters.routes');
 const amaliahItemsRoutes = require('./modules/amaliah-items/amaliah-items.routes');
@@ -54,6 +55,7 @@ app.use(
 );
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/students', studentsRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/semesters', semestersRoutes);
 app.use('/api/amaliah-items', amaliahItemsRoutes);

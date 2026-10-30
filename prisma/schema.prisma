@@ -69,13 +69,17 @@ model Class {
 }
 
 model Student {
-  id      Int    @id @default(autoincrement())
-  userId  String @unique
-  nis     String @unique
-  classId Int?
+  id       Int     @id @default(autoincrement())
+  userId   String? @unique
+  name     String
+  nis      String  @unique
+  classId  Int?
+  branchId Int
+  isActive Boolean @default(true)
 
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   class   Class?       @relation(fields: [classId], references: [id], onDelete: SetNull)
+  branch  Branch       @relation(fields: [branchId], references: [id])
   entries DailyEntry[]
 
   @@map("students")
@@ -199,6 +203,7 @@ model Branch {
   isActive  Boolean       @default(true)
   createdAt DateTime      @default(now())
   users     User[]
+  students  Student[]
   classes   Class[]
   semesters Semester[]
   items     AmaliahItem[]

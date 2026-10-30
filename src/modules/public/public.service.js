@@ -10,12 +10,13 @@ async function findActiveStudent(studentId) {
     select: {
       id: true,
       userId: true,
-      user: { select: { isActive: true } },
+      name: true,
+      isActive: true,
       class: { select: { branch: { select: { isActive: true } } } },
     },
   });
 
-  if (!student || !student.user.isActive || !student.class || !student.class.branch.isActive) {
+  if (!student || !student.isActive || !student.class || !student.class.branch.isActive) {
     throw ApiError.notFound('Siswa tidak ditemukan');
   }
   return student;
@@ -56,22 +57,22 @@ async function searchStudents({ classId, q }) {
       classId,
       user: { isActive: true, name: { contains: term, mode: 'insensitive' } },
     },
-    select: { id: true, user: { select: { name: true } } },
-    orderBy: { user: { name: 'asc' } },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
     take: 10,
   });
 
-  return students.map((s) => ({ id: s.id, name: s.user.name }));
+  return students.map((s) => ({ id: s.id, name: s.name }));
 }
 
 async function getForm(studentId, date) {
   const student = await findActiveStudent(studentId);
-  return publicForm(await entriesService.getForm(student.userId, date));
+  return publicForm(await entriesService.getFormForStudent(student.id, date));
 }
 
 async function saveEntry(studentId, date, body) {
   const student = await findActiveStudent(studentId);
-  return publicForm(await entriesService.saveEntry(student.userId, date, body));
+  return publicForm(await entriesService.saveEntryForStudent(student.id, date, body));
 }
 
 async function history(studentId) {
@@ -81,7 +82,7 @@ async function history(studentId) {
   const from = new Date(`${today}T00:00:00.000Z`);
   from.setUTCDate(from.getUTCDate() - 13);
 
-  const entries = await entriesService.listEntries(student.userId, {
+  const entries = await entriesService.listEntriesForStudent(student.id, {
     from: toDateString(from),
     to: today,
   });

@@ -79,14 +79,26 @@ Akses: ADMIN dan ADMIN\_SEKOLAH. Admin sekolah hanya melihat dan mengubah user d
 | DELETE | `/users/:id` | Menonaktifkan user. Tidak bisa menonaktifkan akun sendiri. |
 | DELETE | `/users/destroy/:id` | Menghapus user permanen jika tidak memiliki data terkait. Tidak bisa menghapus akun sendiri. |
 
-Body `POST /users`:
+Body `POST /users` (untuk akun yang dapat login; siswa dikelola melalui `/students`):
 
 - `name`, `username` (minimal 3 karakter), `password` (minimal 8 karakter), dan `role` wajib.
 - `branchId` wajib untuk peran bercabang saat ADMIN yang membuat. Untuk ADMIN\_SEKOLAH, nilainya diabaikan dan dipaksa ke cabang sendiri.
-- `nis` wajib untuk SISWA. `nip` opsional untuk GURU.
-- ADMIN\_SEKOLAH hanya boleh membuat GURU, SISWA, dan KEPALA\_SEKOLAH.
+- `nip` opsional untuk GURU.
+- ADMIN\_SEKOLAH hanya boleh membuat GURU dan KEPALA\_SEKOLAH.
 
 Body `PATCH /users/:id`: `name`, `username`, `password`, `isActive`, `nis`, `nip`. Field `role` dan `branchId` hanya berlaku jika yang mengubah adalah ADMIN.
+
+## Siswa
+
+Siswa bukan akun login dan tidak dibuat melalui `/users`. Endpoint berikut mengelola data siswa tanpa membuat record `User`:
+
+| Method | Path | Keterangan |
+| --- | --- | --- |
+| POST | `/students` | Membuat siswa dengan `name`, `nis`, `branchId`, dan `classId` opsional. |
+| GET | `/students` | Daftar siswa. |
+| PATCH | `/students/:id` | Mengubah data siswa. |
+| DELETE | `/students/:id` | Menonaktifkan siswa. |
+| DELETE | `/students/destroy/:id` | Menghapus siswa permanen jika tidak memiliki data terkait. |
 
 ## Kelas
 

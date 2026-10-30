@@ -42,7 +42,7 @@ async function listEntries(actor, { classId, branchId, date, from, to }) {
         select: {
           id: true,
           nis: true,
-          user: { select: { name: true } },
+          name: true,
           class: { select: { id: true, name: true } },
         },
       },
@@ -71,7 +71,7 @@ async function getEntry(actor, entryId) {
         select: {
           id: true,
           nis: true,
-          user: { select: { name: true } },
+          name: true,
           class: { select: { id: true, name: true } },
         },
       },

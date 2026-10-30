@@ -1,11 +1,10 @@
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 const prisma = require('../../config/db'); // Gunakan satu tempat impor saja
 const ApiError = require('../../utils/ApiError');
 const { getBranchFilter, assertBranchAccess } = require('../../utils/branchScope');
 
 // Peran yang selalu terikat ke satu cabang
-const ROLE_CABANG = ['GURU', 'SISWA', 'KEPALA_SEKOLAH'];
+const ROLE_CABANG = ['GURU', 'KEPALA_SEKOLAH'];
 
 // Field aman, tanpa passwordHash
 const safeSelect = {
@@ -24,11 +23,7 @@ const fullSelect = {
   teacher: true,
 };
 
-async function createUser(actor, { name, username, password, role, nis, nip, branchId, classId }) {
-  if (role === 'SISWA') {
-    username = username || `siswa_${nis}_${crypto.randomBytes(4).toString('hex')}`;
-    password = password || crypto.randomBytes(24).toString('hex');
-  }
+async function createUser(actor, { name, username, password, role, nip, branchId, classId }) {
   // Validasi panjang username & password sesuai dokumentasi
   if (!username || username.length < 3) {
     throw ApiError.badRequest('Username minimal 3 karakter');
@@ -40,7 +35,7 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
   // Hak akses pembuatan berdasarkan peran pelaksana (actor)
   if (actor.role === 'ADMIN_SEKOLAH') {
     if (!ROLE_CABANG.includes(role)) {
-      throw ApiError.forbidden('Admin sekolah hanya boleh membuat GURU, SISWA, atau KEPALA_SEKOLAH');
+      throw ApiError.forbidden('Admin sekolah hanya boleh membuat GURU atau KEPALA_SEKOLAH');
     }
     // Dipaksa ke cabang sendiri
     branchId = actor.branchId;
@@ -52,14 +47,6 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
     }
   }
 
-  // Validasi wajib NIS untuk Siswa
-  if (role === 'SISWA' && !nis) {
-    throw ApiError.badRequest('nis wajib diisi untuk peran SISWA');
-  }
-  if (role === 'SISWA' && classId !== undefined) {
-    const kelas = await prisma.class.findUnique({ where: { id: classId }, select: { branchId: true } });
-    if (!kelas || kelas.branchId !== branchId) throw ApiError.badRequest('Kelas tidak sesuai dengan cabang siswa');
-  }
 
   // Cek apakah username sudah digunakan (Harus 409 sesuai spesifikasi)
   const existingUser = await prisma.user.findUnique({ where: { username } });
@@ -77,9 +64,7 @@ async function createUser(actor, { name, username, password, role, nis, nip, bra
     branchId: branchId ?? null,
   };
 
-  if (role === 'SISWA') {
-    userData.student = { create: { nis, classId: classId ?? null } };
-  } else if (role === 'GURU' && nip) {
+  if (role === 'GURU' && nip) {
     userData.teacher = { create: { nip } };
   }
 
@@ -177,11 +162,6 @@ async function updateUser(actor, id, data) {
   }
 
   // Update relasi NIS / NIP
-  if (nis !== undefined && user.role === 'SISWA') {
-    updateData.student = { upsert: { create: { nis, classId: classId ?? null }, update: { nis, ...(classId !== undefined ? { classId } : {}) } } };
-  } else if (classId !== undefined && user.role === 'SISWA') {
-    updateData.student = { update: { classId: classId ?? null } };
-  }
   if (nip !== undefined && user.role === 'GURU') {
     updateData.teacher = { upsert: { create: { nip }, update: { nip } } };
   }

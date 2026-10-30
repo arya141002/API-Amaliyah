@@ -35,7 +35,7 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
     select: {
       id: true,
       nis: true,
-      user: { select: { name: true } },
+      name: true,
       class: { select: { id: true, name: true } },
     },
     orderBy: { nis: 'asc' },
@@ -99,7 +99,7 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
     return {
       studentId: st.id,
       nis: st.nis,
-      name: st.user.name,
+      name: st.name,
       class: st.class,
       totalEntries: s.totalEntries,
       verified: s.verified,

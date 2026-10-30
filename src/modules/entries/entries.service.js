@@ -19,6 +19,15 @@ async function getStudent(userId) {
   return { ...student, branchId: user.branchId };
 }
 
+async function getStudentById(studentId) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { id: true, branchId: true },
+  });
+  if (!student) throw ApiError.notFound('Siswa tidak ditemukan');
+  return student;
+}
+
 // Semester dicari per cabang, karena tiap cabang punya jadwal sendiri
 function findSemesterByDate(branchId, date) {
   return prisma.semester.findFirst({
@@ -191,4 +200,78 @@ async function listEntries(userId, { semesterId, from, to }) {
   });
 }
 
-module.exports = { getForm, saveEntry, listEntries };
+async function getFormForStudent(studentId, dateString) {
+  const student = await getStudentById(studentId);
+  return getFormForRecord(student, dateString);
+}
+
+async function getFormForRecord(student, dateString) {
+  const dateText = dateString || todayJakarta();
+  const date = parseDateOnly(dateText);
+  const [semester, { items, isRamadhan }, entry] = await Promise.all([
+    findSemesterByDate(student.branchId, date),
+    getItemsForDate(student.branchId, date),
+    prisma.dailyEntry.findUnique({ where: { studentId_date: { studentId: student.id, date } }, include: { details: true, verification: true } }),
+  ]);
+  const saved = new Map((entry?.details ?? []).map((d) => [d.itemId, d]));
+  const problem = editProblem(dateText, entry);
+  return {
+    date: dateText, isRamadhan, semester, canEdit: !problem && Boolean(semester),
+    lockReason: problem || (semester ? null : 'Tanggal ini di luar semester cabang Anda'),
+    notes: entry?.notes ?? null, score: entry?.score ?? null, verification: entry?.verification ?? null,
+    items: items.map((item) => ({ ...item, value: saved.has(item.id) ? { boolValue: saved.get(item.id).boolValue, numberValue: saved.get(item.id).numberValue, textValue: saved.get(item.id).textValue } : null })),
+  };
+}
+
+async function saveEntryForStudent(studentId, dateText, body) {
+  const student = await getStudentById(studentId);
+  return saveEntryForRecord(student, dateText, body);
+}
+
+async function saveEntryForRecord(student, dateText, { notes, details }) {
+  const date = parseDateOnly(dateText);
+  const semester = await findSemesterByDate(student.branchId, date);
+  if (!semester) throw ApiError.badRequest('Tanggal ini di luar semester cabang Anda');
+  const existing = await prisma.dailyEntry.findUnique({ where: { studentId_date: { studentId: student.id, date } }, include: { verification: true } });
+  const problem = editProblem(dateText, existing);
+  if (problem) throw ApiError.badRequest(problem);
+  const { items } = await getItemsForDate(student.branchId, date);
+  const allowed = new Map(items.map((i) => [i.id, i]));
+  const seen = new Set();
+  const rows = details.map((d) => {
+    const item = allowed.get(d.itemId);
+    if (!item || seen.has(d.itemId)) throw ApiError.badRequest(`Item ${d.itemId} tidak tersedia atau terkirim lebih dari sekali`);
+    seen.add(d.itemId);
+    if (item.inputType === 'CHECKLIST') {
+      if (typeof d.boolValue !== 'boolean') throw ApiError.badRequest(`"${item.name}" harus diisi ya/tidak (boolValue)`);
+      return { itemId: item.id, boolValue: d.boolValue };
+    }
+    if (item.inputType === 'NUMBER') {
+      if (typeof d.numberValue !== 'number' || d.numberValue < 0) throw ApiError.badRequest(`"${item.name}" harus diisi angka valid`);
+      return { itemId: item.id, numberValue: d.numberValue };
+    }
+    if (typeof d.textValue !== 'string') throw ApiError.badRequest(`"${item.name}" harus diisi teks`);
+    return { itemId: item.id, textValue: d.textValue.trim() };
+  });
+  const checklistTotal = items.filter((i) => i.inputType === 'CHECKLIST').length;
+  const score = checklistTotal ? Math.round((rows.filter((r) => r.boolValue === true).length / checklistTotal) * 100) : 0;
+  await prisma.$transaction(async (tx) => {
+    const entry = await tx.dailyEntry.upsert({ where: { studentId_date: { studentId: student.id, date } }, update: { notes, semesterId: semester.id, score }, create: { studentId: student.id, semesterId: semester.id, date, notes, score } });
+    await tx.entryDetail.deleteMany({ where: { entryId: entry.id } });
+    await tx.entryDetail.createMany({ data: rows.map((row) => ({ ...row, entryId: entry.id })) });
+  });
+  return getFormForRecord(student, dateText);
+}
+
+async function listEntriesForStudent(studentId, range) {
+  const student = await getStudentById(studentId);
+  const where = { studentId: student.id };
+  if (range.from || range.to) {
+    where.date = {};
+    if (range.from) where.date.gte = parseDateOnly(range.from);
+    if (range.to) where.date.lte = parseDateOnly(range.to);
+  }
+  return prisma.dailyEntry.findMany({ where, orderBy: { date: 'desc' }, include: { verification: { select: { status: true, note: true, verifiedAt: true } }, _count: { select: { details: true } } } });
+}
+
+module.exports = { getForm, saveEntry, listEntries, getFormForStudent, saveEntryForStudent, listEntriesForStudent };
