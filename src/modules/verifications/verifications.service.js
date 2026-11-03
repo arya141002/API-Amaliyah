@@ -1,6 +1,6 @@
 const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
-const { parseDateOnly, todayJakarta } = require('../../utils/date');
+const { parseDateOnly } = require('../../utils/date');
 const { getHomeroomClassIds } = require('../../utils/teacherScope');
 
 // Batas entri yang boleh dilihat peran ini
@@ -31,7 +31,6 @@ async function listEntries(actor, { classId, branchId, date, from, to }) {
   } else {
     if (from) where.AND.push({ date: { gte: parseDateOnly(from) } });
     if (to) where.AND.push({ date: { lte: parseDateOnly(to) } });
-    if (!from && !to) where.AND.push({ date: parseDateOnly(todayJakarta()) });
   }
 
   return prisma.dailyEntry.findMany({
