@@ -3,6 +3,16 @@ const ApiError = require('../../utils/ApiError');
 const { parseDateOnly } = require('../../utils/date');
 const { getHomeroomClassIds } = require('../../utils/teacherScope');
 
+function calculateScore(details, dailyStatus) {
+  if (dailyStatus === 'MENSTRUATION') return 0;
+  return Math.min(20, details.reduce((total, detail) => {
+    if (detail.item?.inputType === 'CHECKLIST') return total + (detail.boolValue ? 1 : 0);
+    if (detail.item?.inputType === 'RADIO') return total + Math.max(0, (Array.isArray(detail.item.options) ? detail.item.options : []).indexOf(detail.textValue));
+    if (detail.item?.inputType === 'NUMBER') return total + Math.min(2, detail.numberValue || 0);
+    return total + (detail.textValue ? 1 : 0);
+  }, 0));
+}
+
 // Batas entri yang boleh dilihat peran ini
 async function scopeFor(actor) {
   if (actor.role === 'ADMIN') return {};
@@ -46,9 +56,16 @@ async function listEntries(actor, { classId, branchId, date, from, to }) {
         },
       },
       verification: true,
-      _count: { select: { details: true } },
+      details: {
+        select: {
+          boolValue: true,
+          numberValue: true,
+          textValue: true,
+          item: { select: { inputType: true, options: true } },
+        },
+      },
     },
-  });
+  }).then((entries) => entries.map((entry) => ({ ...entry, score: calculateScore(entry.details, entry.dailyStatus) })));
 }
 
 // Ambil satu entri, dan balas 404 kalau di luar cakupan actor
@@ -75,12 +92,12 @@ async function getEntry(actor, entryId) {
         },
       },
       details: {
-        include: { item: { select: { name: true, inputType: true, unit: true } } },
+        include: { item: { select: { name: true, inputType: true, unit: true, options: true } } },
         orderBy: { itemId: 'asc' },
       },
       verification: true,
     },
-  });
+  }).then((entry) => (entry ? { ...entry, score: calculateScore(entry.details, entry.dailyStatus) } : entry));
 }
 
 async function verifyEntry(actor, entryId, { status, note }) {
@@ -89,6 +106,8 @@ async function verifyEntry(actor, entryId, { status, note }) {
   }
 
   await findEntryInScope(actor, entryId);
+  const existing = await prisma.verification.findUnique({ where: { entryId } });
+  if (existing) throw ApiError.conflict('Entri ini sudah disetujui dan tidak dapat diubah');
 
   const teacher = await prisma.teacher.findUnique({ where: { userId: actor.id } });
   if (!teacher) throw ApiError.forbidden('Akun ini tidak memiliki profil guru');

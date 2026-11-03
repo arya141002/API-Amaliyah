@@ -94,6 +94,7 @@ async function getForm(userId, dateString) {
     notes: entry?.notes ?? null,
     score: entry?.score ?? null,
     verification: entry?.verification ?? null,
+    dailyStatus: entry?.dailyStatus ?? null,
     items: items.map((item) => {
       const d = saved.get(item.id);
       return {
@@ -104,7 +105,7 @@ async function getForm(userId, dateString) {
   };
 }
 
-async function saveEntry(userId, dateText, { notes, details }) {
+async function saveEntry(userId, dateText, { notes, details, dailyStatus }) {
   const student = await getStudent(userId);
   const date = parseDateOnly(dateText);
 
@@ -162,15 +163,19 @@ async function saveEntry(userId, dateText, { notes, details }) {
   });
 
     // Skor otomatis: persentase ceklis yang dikerjakan dari seluruh ceklis di form
-  const checklistTotal = items.filter((i) => i.inputType === 'CHECKLIST').length;
-  const checklistDone = rows.filter((r) => r.boolValue === true).length;
-  const score = checklistTotal ? Math.round((checklistDone / checklistTotal) * 100) : 0;
+  const score = dailyStatus === 'MENSTRUATION' ? 0 : Math.min(20, rows.reduce((total, row) => {
+    const item = items.find((candidate) => candidate.id === row.itemId);
+    if (item.inputType === 'CHECKLIST') return total + (row.boolValue ? 1 : 0);
+    if (item.inputType === 'RADIO') return total + Math.max(0, (Array.isArray(item.options) ? item.options : []).indexOf(row.textValue));
+    if (item.inputType === 'NUMBER') return total + Math.min(2, row.numberValue || 0);
+    return total + (row.textValue ? 1 : 0);
+  }, 0));
 
   await prisma.$transaction(async (tx) => {
     const entry = await tx.dailyEntry.upsert({
       where: { studentId_date: { studentId: student.id, date } },
-      update: { notes, semesterId: semester.id, score },
-      create: { studentId: student.id, semesterId: semester.id, date, notes, score },
+      update: { notes, dailyStatus, semesterId: semester.id, score },
+      create: { studentId: student.id, semesterId: semester.id, date, notes, dailyStatus, score },
     });
     await tx.entryDetail.deleteMany({ where: { entryId: entry.id } });
     await tx.entryDetail.createMany({ data: rows.map((r) => ({ ...r, entryId: entry.id })) });
@@ -218,7 +223,7 @@ async function getFormForRecord(student, dateString) {
   return {
     date: dateText, isRamadhan, semester, canEdit: !problem && Boolean(semester),
     lockReason: problem || (semester ? null : 'Tanggal ini di luar semester cabang Anda'),
-    notes: entry?.notes ?? null, score: entry?.score ?? null, verification: entry?.verification ?? null,
+    notes: entry?.notes ?? null, dailyStatus: entry?.dailyStatus ?? null, score: entry?.score ?? null, verification: entry?.verification ?? null,
     items: items.map((item) => ({ ...item, value: saved.has(item.id) ? { boolValue: saved.get(item.id).boolValue, numberValue: saved.get(item.id).numberValue, textValue: saved.get(item.id).textValue } : null })),
   };
 }
@@ -228,7 +233,7 @@ async function saveEntryForStudent(studentId, dateText, body) {
   return saveEntryForRecord(student, dateText, body);
 }
 
-async function saveEntryForRecord(student, dateText, { notes, details }) {
+async function saveEntryForRecord(student, dateText, { notes, details, dailyStatus }) {
   const date = parseDateOnly(dateText);
   const semester = await findSemesterByDate(student.branchId, date);
   if (!semester) throw ApiError.badRequest('Tanggal ini di luar semester cabang Anda');
@@ -253,10 +258,15 @@ async function saveEntryForRecord(student, dateText, { notes, details }) {
     if (typeof d.textValue !== 'string') throw ApiError.badRequest(`"${item.name}" harus diisi teks`);
     return { itemId: item.id, textValue: d.textValue.trim() };
   });
-  const checklistTotal = items.filter((i) => i.inputType === 'CHECKLIST').length;
-  const score = checklistTotal ? Math.round((rows.filter((r) => r.boolValue === true).length / checklistTotal) * 100) : 0;
+  const score = dailyStatus === 'MENSTRUATION' ? 0 : Math.min(20, rows.reduce((total, row) => {
+    const item = items.find((candidate) => candidate.id === row.itemId);
+    if (item.inputType === 'CHECKLIST') return total + (row.boolValue ? 1 : 0);
+    if (item.inputType === 'RADIO') return total + Math.max(0, (Array.isArray(item.options) ? item.options : []).indexOf(row.textValue));
+    if (item.inputType === 'NUMBER') return total + Math.min(2, row.numberValue || 0);
+    return total + (row.textValue ? 1 : 0);
+  }, 0));
   await prisma.$transaction(async (tx) => {
-    const entry = await tx.dailyEntry.upsert({ where: { studentId_date: { studentId: student.id, date } }, update: { notes, semesterId: semester.id, score }, create: { studentId: student.id, semesterId: semester.id, date, notes, score } });
+    const entry = await tx.dailyEntry.upsert({ where: { studentId_date: { studentId: student.id, date } }, update: { notes, dailyStatus, semesterId: semester.id, score }, create: { studentId: student.id, semesterId: semester.id, date, notes, dailyStatus, score } });
     await tx.entryDetail.deleteMany({ where: { entryId: entry.id } });
     await tx.entryDetail.createMany({ data: rows.map((row) => ({ ...row, entryId: entry.id })) });
   });

@@ -154,6 +154,7 @@ model DailyEntry {
   date       DateTime @db.Date
   notes      String?
   score Int?
+  dailyStatus String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

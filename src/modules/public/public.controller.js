@@ -34,18 +34,21 @@ const form = asyncHandler(async (req, res) => {
 });
 
 const save = asyncHandler(async (req, res) => {
-  const { notes, details } = req.body || {};
+  const { notes, details, dailyStatus } = req.body || {};
   if (!Array.isArray(details) || details.length === 0) {
     throw ApiError.badRequest('Isi minimal satu item');
   }
   if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
     throw ApiError.badRequest('Catatan harus berupa teks, maksimal 500 karakter');
   }
+  if (dailyStatus !== undefined && dailyStatus !== null && dailyStatus !== 'MENSTRUATION') {
+    throw ApiError.badRequest('Status harian tidak valid');
+  }
 
   const data = await service.saveEntry(
     parseId(req.params.studentId, 'studentId'),
     req.params.date,
-    { notes, details }
+    { notes, details, dailyStatus }
   );
   res.json({ success: true, message: 'Amaliah tersimpan', data });
 });
