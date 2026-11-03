@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+require('./config/env');
+
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
@@ -22,19 +24,28 @@ const app = express();
 // Diperlukan agar Express membaca IP / Header dari Vercel Reverse Proxy
 app.set('trust proxy', 1);
 
-// 1. Opsi CORS Eksplisit
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Tambahkan domain frontend jika sudah di-deploy
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Origin tidak diizinkan oleh CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
-// 2. Pasang CORS SEBELUM Helmet & Middleware Lainnya
 app.use(cors(corsOptions));
 
-// 3. Konfigurasi Helmet agar tidak memblokir Cross-Origin Resource
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' }
