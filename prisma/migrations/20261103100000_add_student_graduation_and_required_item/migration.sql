@@ -1,0 +1,2 @@
+ALTER TABLE "students" ADD COLUMN "isGraduated" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "amaliah_items" ADD COLUMN "isRequired" BOOLEAN NOT NULL DEFAULT true;

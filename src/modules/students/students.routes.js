@@ -11,9 +11,10 @@ const schema = z.object({
   branchId: z.number().int().positive().optional(),
   classId: z.number().int().positive().nullable().optional(),
   isActive: z.boolean().optional(),
+  isGraduated: z.boolean().optional(),
 });
 
-router.use(authenticate, authorize('ADMIN', 'ADMIN_SEKOLAH'));
+router.use(authenticate, authorize('ADMIN', 'ADMIN_SEKOLAH', 'GURU'));
 router.post('/', validate(schema), controller.create);
 router.get('/', controller.list);
 router.get('/:id', controller.detail);

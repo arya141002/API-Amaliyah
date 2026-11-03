@@ -6,7 +6,10 @@ const create = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, message: 'Siswa berhasil dibuat', data });
 });
 const list = asyncHandler(async (req, res) => {
-  const data = await service.listStudents(req.user, req.query);
+  const data = await service.listStudents(req.user, {
+    ...req.query,
+    includeGraduated: req.query.includeGraduated === 'true',
+  });
   res.json({ success: true, data });
 });
 const detail = asyncHandler(async (req, res) => {

@@ -52,7 +52,7 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
   const entries = await prisma.dailyEntry.findMany({
     where: entryWhere,
     include: {
-      details: { include: { item: { select: { inputType: true } } } },
+      details: { include: { item: { select: { inputType: true, options: true } } } },
       verification: { select: { status: true } },
     },
   });
@@ -64,7 +64,6 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
       {
         totalEntries: 0,
         verified: 0,
-        rejected: 0,
         scores: [],
         checklistDone: 0,
         checklistTotal: 0,
@@ -78,10 +77,15 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
     s.totalEntries++;
 
     if (e.verification?.status === 'VERIFIED') s.verified++;
-    if (e.verification?.status === 'REJECTED') s.rejected++;
-
-    // Skor diambil dari entri, bukan dari verifikasi
-    if (typeof e.score === 'number') s.scores.push(e.score);
+    if (e.dailyStatus !== 'MENSTRUATION') {
+      const score = Math.min(20, e.details.reduce((total, detail) => {
+        if (detail.item.inputType === 'CHECKLIST') return total + (detail.boolValue ? 1 : 0);
+        if (detail.item.inputType === 'RADIO') return total + Math.max(0, (Array.isArray(detail.item.options) ? detail.item.options : []).indexOf(detail.textValue));
+        if (detail.item.inputType === 'NUMBER') return total + Math.min(2, detail.numberValue || 0);
+        return total + (detail.textValue ? 1 : 0);
+      }, 0));
+      s.scores.push(score);
+    }
 
     for (const d of e.details) {
       if (d.item.inputType === 'CHECKLIST') {
@@ -103,7 +107,6 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
       class: st.class,
       totalEntries: s.totalEntries,
       verified: s.verified,
-      rejected: s.rejected,
       checklistPercent: s.checklistTotal ? Math.round((s.checklistDone / s.checklistTotal) * 100) : null,
       numberTotal: s.numberTotal,
       averageScore: s.scores.length

@@ -76,6 +76,7 @@ model Student {
   classId  Int?
   branchId Int
   isActive Boolean @default(true)
+  isGraduated Boolean @default(false)
 
   user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   class   Class?       @relation(fields: [classId], references: [id], onDelete: SetNull)
@@ -131,6 +132,7 @@ model AmaliahItem {
   unit       String?
   options    Json?
   isRamadhan Boolean   @default(false)
+  isRequired Boolean   @default(true)
   isActive   Boolean   @default(true)
   sortOrder  Int       @default(0)
 

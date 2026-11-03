@@ -13,6 +13,7 @@ const itemFields = {
   unit: z.string().optional(),
   options: z.array(z.string().min(1)).max(20).optional(),
   isRamadhan: z.boolean().default(false),
+  isRequired: z.boolean().default(true),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().default(0),
   branchId: z.number().int().positive('branchId tidak valid').optional(),

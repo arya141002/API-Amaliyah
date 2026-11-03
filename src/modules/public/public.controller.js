@@ -35,7 +35,7 @@ const form = asyncHandler(async (req, res) => {
 
 const save = asyncHandler(async (req, res) => {
   const { notes, details, dailyStatus } = req.body || {};
-  if (!Array.isArray(details) || details.length === 0) {
+  if (!Array.isArray(details) || (details.length === 0 && dailyStatus !== 'MENSTRUATION')) {
     throw ApiError.badRequest('Isi minimal satu item');
   }
   if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {

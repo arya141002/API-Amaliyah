@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
+const { getHomeroomClassIds } = require('../../utils/teacherScope');
 
 const include = {
   branch: { select: { id: true, name: true } },
@@ -16,8 +17,13 @@ async function validateHomeroomTeacher(branchId, homeroomTeacherId) {
 }
 
 async function list(actor) {
+  const where = actor.role === 'ADMIN_SEKOLAH'
+    ? { branchId: actor.branchId }
+    : actor.role === 'GURU'
+      ? { id: { in: await getHomeroomClassIds(actor.id) } }
+      : undefined;
   return prisma.class.findMany({
-    where: actor.role === 'ADMIN_SEKOLAH' ? { branchId: actor.branchId } : undefined,
+    where,
     include,
     orderBy: [{ gradeLevel: 'asc' }, { name: 'asc' }],
   });

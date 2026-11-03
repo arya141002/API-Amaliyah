@@ -161,6 +161,12 @@ async function saveEntry(userId, dateText, { notes, details, dailyStatus }) {
     }
     return { itemId: item.id, textValue: d.textValue.trim() };
   });
+  if (dailyStatus !== 'MENSTRUATION') {
+    const requiredIds = new Set(items.filter((item) => item.isRequired).map((item) => item.id));
+    for (const id of requiredIds) {
+      if (!seen.has(id)) throw ApiError.badRequest('Semua item wajib harus diisi');
+    }
+  }
 
     // Skor otomatis: persentase ceklis yang dikerjakan dari seluruh ceklis di form
   const score = dailyStatus === 'MENSTRUATION' ? 0 : Math.min(20, rows.reduce((total, row) => {
@@ -258,6 +264,12 @@ async function saveEntryForRecord(student, dateText, { notes, details, dailyStat
     if (typeof d.textValue !== 'string') throw ApiError.badRequest(`"${item.name}" harus diisi teks`);
     return { itemId: item.id, textValue: d.textValue.trim() };
   });
+  if (dailyStatus !== 'MENSTRUATION') {
+    const requiredIds = new Set(items.filter((item) => item.isRequired).map((item) => item.id));
+    for (const id of requiredIds) {
+      if (!seen.has(id)) throw ApiError.badRequest('Semua item wajib harus diisi');
+    }
+  }
   const score = dailyStatus === 'MENSTRUATION' ? 0 : Math.min(20, rows.reduce((total, row) => {
     const item = items.find((candidate) => candidate.id === row.itemId);
     if (item.inputType === 'CHECKLIST') return total + (row.boolValue ? 1 : 0);

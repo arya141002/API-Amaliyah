@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const ApiError = require('../../utils/ApiError');
 const { getBranchFilter, assertBranchAccess } = require('../../utils/branchScope');
+const { getHomeroomClassIds } = require('../../utils/teacherScope');
 
 const include = {
   class: { select: { id: true, name: true } },
@@ -14,7 +15,11 @@ async function validateClass(branchId, classId) {
 }
 
 async function createStudent(actor, { name, nis, branchId, classId }) {
-  const targetBranchId = actor.role === 'ADMIN_SEKOLAH' ? actor.branchId : branchId;
+  if (actor.role === 'GURU') {
+    const classIds = await getHomeroomClassIds(actor.id);
+    if (!classId || !classIds.includes(classId)) throw ApiError.forbidden('Siswa hanya dapat ditambahkan ke kelas yang Anda walikan');
+  }
+  const targetBranchId = ['ADMIN_SEKOLAH', 'GURU'].includes(actor.role) ? actor.branchId : branchId;
   if (!targetBranchId) throw ApiError.badRequest('branchId wajib diisi');
   await validateClass(targetBranchId, classId);
   try {
@@ -28,10 +33,13 @@ async function createStudent(actor, { name, nis, branchId, classId }) {
   }
 }
 
-async function listStudents(actor, { search, branchId, page = 1, limit = 20 }) {
+async function listStudents(actor, { search, branchId, page = 1, limit = 20, includeGraduated = false }) {
   const take = Number(limit);
   const currentPage = Number(page);
-  const where = { ...getBranchFilter(actor, branchId ? Number(branchId) : undefined) };
+  const where = actor.role === 'GURU'
+    ? { classId: { in: await getHomeroomClassIds(actor.id) } }
+    : { ...getBranchFilter(actor, branchId ? Number(branchId) : undefined) };
+  if (!includeGraduated) where.isGraduated = false;
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -48,18 +56,27 @@ async function listStudents(actor, { search, branchId, page = 1, limit = 20 }) {
 async function getStudent(actor, id) {
   const student = await prisma.student.findUnique({ where: { id }, include });
   if (!student) throw ApiError.notFound('Siswa tidak ditemukan');
-  assertBranchAccess(actor, student.branchId);
+  if (actor.role === 'GURU') {
+    const classIds = await getHomeroomClassIds(actor.id);
+    if (!student.classId || !classIds.includes(student.classId)) throw ApiError.notFound('Siswa tidak ditemukan');
+  } else {
+    assertBranchAccess(actor, student.branchId);
+  }
   return student;
 }
 
-async function updateStudent(actor, id, { name, nis, branchId, classId, isActive }) {
+async function updateStudent(actor, id, { name, nis, branchId, classId, isActive, isGraduated }) {
   const student = await getStudent(actor, id);
-  const targetBranchId = actor.role === 'ADMIN_SEKOLAH' ? actor.branchId : (branchId ?? student.branchId);
+  const targetBranchId = ['ADMIN_SEKOLAH', 'GURU'].includes(actor.role) ? actor.branchId : (branchId ?? student.branchId);
+  if (actor.role === 'GURU') {
+    const classIds = await getHomeroomClassIds(actor.id);
+    if (!classId || !classIds.includes(classId)) throw ApiError.forbidden('Siswa hanya dapat ditempatkan di kelas yang Anda walikan');
+  }
   await validateClass(targetBranchId, classId);
   try {
     return await prisma.student.update({
       where: { id },
-      data: { name, nis, branchId: targetBranchId, classId, isActive },
+      data: { name, nis, branchId: targetBranchId, classId, isActive, isGraduated },
       include,
     });
   } catch (error) {
