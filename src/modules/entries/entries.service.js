@@ -65,6 +65,7 @@ function editProblem(dateText, entry) {
   }
 
   if (entry?.verification) return 'Entri sudah diverifikasi guru dan tidak bisa diubah';
+  if (entry) return 'Jurnal pada tanggal ini sudah disimpan dan tidak dapat diubah';
   return null;
 }
 
@@ -95,6 +96,7 @@ async function getForm(userId, dateString) {
     score: entry?.score ?? null,
     verification: entry?.verification ?? null,
     dailyStatus: entry?.dailyStatus ?? null,
+    isSaved: Boolean(entry),
     items: items.map((item) => {
       const d = saved.get(item.id);
       return {
@@ -230,6 +232,7 @@ async function getFormForRecord(student, dateString) {
     date: dateText, isRamadhan, semester, canEdit: !problem && Boolean(semester),
     lockReason: problem || (semester ? null : 'Tanggal ini di luar semester cabang Anda'),
     notes: entry?.notes ?? null, dailyStatus: entry?.dailyStatus ?? null, score: entry?.score ?? null, verification: entry?.verification ?? null,
+    isSaved: Boolean(entry),
     items: items.map((item) => ({ ...item, value: saved.has(item.id) ? { boolValue: saved.get(item.id).boolValue, numberValue: saved.get(item.id).numberValue, textValue: saved.get(item.id).textValue } : null })),
   };
 }

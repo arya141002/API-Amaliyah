@@ -109,8 +109,11 @@ async function semesterRecap(actor, { semesterId, classId, branchId, from, to })
       verified: s.verified,
       checklistPercent: s.checklistTotal ? Math.round((s.checklistDone / s.checklistTotal) * 100) : null,
       numberTotal: s.numberTotal,
+      averagePoints: s.scores.length
+        ? Math.round((s.scores.reduce((a, b) => a + b, 0) / s.scores.length) * 100) / 100
+        : null,
       averageScore: s.scores.length
-        ? Math.round(s.scores.reduce((a, b) => a + b, 0) / s.scores.length)
+        ? Math.round((s.scores.reduce((a, b) => a + b, 0) / s.scores.length / 20) * 100)
         : null,
     };
   });
